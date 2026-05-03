@@ -1,7 +1,7 @@
 import { defineQuery } from 'next-sanity'
 import { sanityFetch } from '@/sanity/lib/live'
 import { urlFor } from '@/sanity/lib/image'
-import type { SanityImageSource } from '@sanity/image-url/lib/types/types'
+import type { SanityImageSource } from '@sanity/image-url'
 
 const FEATURED_PORTFOLIO_QUERY = defineQuery(
   `*[_type == "portfolioItem" && featured == true] | order(order asc) {
