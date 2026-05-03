@@ -1,10 +1,26 @@
-// Image URLs expire after 7 days — replace with permanently hosted assets
-const IMG_SURFERS  = "https://www.figma.com/api/mcp/asset/7a49a19f-ba89-46a3-894a-8571530aca3b";
-const IMG_CYBERPUNK = "https://www.figma.com/api/mcp/asset/4ae00883-c981-47e2-a566-782984f23638";
-const IMG_AGENCY   = "https://www.figma.com/api/mcp/asset/e560459e-e4d7-4277-b051-2079db71419b";
-const IMG_MINIMAL  = "https://www.figma.com/api/mcp/asset/42b6622e-61cf-4262-acb3-048f9f7eb046";
+import { defineQuery } from 'next-sanity'
+import { sanityFetch } from '@/sanity/lib/live'
+import { urlFor } from '@/sanity/lib/image'
+import type { SanityImageSource } from '@sanity/image-url'
 
-// Diagonal arrow ↗ (replaces expiring fi_10486523 icon)
+type PortfolioItemData = {
+  _id: string
+  title: string | null
+  tags: string[] | null
+  coverImage: SanityImageSource | null
+  url: string | null
+}
+
+const FEATURED_PORTFOLIO_QUERY = defineQuery(
+  `*[_type == "portfolioItem" && featured == true] | order(order asc) {
+    _id,
+    title,
+    tags,
+    coverImage,
+    url,
+  }`
+)
+
 function Arrow() {
   return (
     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" className="shrink-0">
@@ -14,7 +30,6 @@ function Arrow() {
   );
 }
 
-// Corner bracket via CSS borders (no expiring image)
 function Corner({ pos }: { pos: "tl" | "tr" | "bl" | "br" }) {
   const borders: Record<string, string> = {
     tl: "border-t border-l", tr: "border-t border-r",
@@ -32,24 +47,27 @@ function Tag({ label }: { label: string }) {
 }
 
 interface ProjectCardProps {
-  image: string;
-  tags: string[];
-  title: string;
-  desktopHeight: string;
-  mobileHeight?: string;
+  image: SanityImageSource | null
+  tags: string[]
+  title: string
+  desktopHeight: string
+  mobileHeight?: string
+  url?: string | null
 }
 
-function ProjectCard({ image, tags, title, desktopHeight, mobileHeight = "h-[390px]" }: ProjectCardProps) {
-  return (
+function ProjectCard({ image, tags, title, desktopHeight, mobileHeight = "h-[390px]", url }: ProjectCardProps) {
+  const imgUrl = image ? urlFor(image).width(1200).auto('format').url() : null
+
+  const inner = (
     <div className="flex flex-col gap-2.5">
-      {/* Image with tags overlay */}
-      <div className={`relative ${mobileHeight} ${desktopHeight} overflow-hidden flex flex-col justify-end pb-4 pl-4`}>
-        <img src={image} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover select-none" />
+      <div className={`relative ${mobileHeight} ${desktopHeight} overflow-hidden flex flex-col justify-end pb-4 pl-4 bg-[#e8e8e8]`}>
+        {imgUrl && (
+          <img src={imgUrl} alt={title} className="absolute inset-0 w-full h-full object-cover select-none" />
+        )}
         <div className="relative flex gap-3 items-center flex-wrap">
           {tags.map((tag) => <Tag key={tag} label={tag} />)}
         </div>
       </div>
-      {/* Title + arrow */}
       <div className="flex items-center justify-between">
         <p className="font-black text-[24px] md:text-[36px] text-black tracking-[-0.04em] uppercase leading-[1.1]">
           {title}
@@ -57,7 +75,12 @@ function ProjectCard({ image, tags, title, desktopHeight, mobileHeight = "h-[390
         <Arrow />
       </div>
     </div>
-  );
+  )
+
+  if (url) {
+    return <a href={url} target="_blank" rel="noopener noreferrer">{inner}</a>
+  }
+  return inner
 }
 
 function CtaBox() {
@@ -81,12 +104,21 @@ function CtaBox() {
   );
 }
 
-export default function PortfolioSection() {
+// Desktop heights alternate: left col tall→short, right col short→tall
+const LEFT_HEIGHTS  = ['md:h-[51.667vw]', 'md:h-[48.542vw]', 'md:h-[51.667vw]', 'md:h-[48.542vw]']
+const RIGHT_HEIGHTS = ['md:h-[48.542vw]', 'md:h-[51.667vw]', 'md:h-[48.542vw]', 'md:h-[51.667vw]']
+
+export default async function PortfolioSection() {
+  const { data: rawItems } = await sanityFetch({ query: FEATURED_PORTFOLIO_QUERY })
+  const items = (rawItems ?? []) as PortfolioItemData[]
+
+  const leftItems  = items.filter((_item: PortfolioItemData, i: number) => i % 2 === 0)
+  const rightItems = items.filter((_item: PortfolioItemData, i: number) => i % 2 === 1)
+
   return (
     <section className="bg-white px-4 md:px-[2.222vw] py-12 md:py-[5.556vw]">
 
-      {/* ── Header ── */}
-      {/* Mobile */}
+      {/* Mobile header */}
       <div className="md:hidden flex flex-col gap-4 mb-8 uppercase">
         <p className="font-mono text-sm text-[#1f1f1f]">[ portfolio ]</p>
         <div className="flex items-start justify-between">
@@ -94,20 +126,19 @@ export default function PortfolioSection() {
             <p>Selected</p>
             <p>Work</p>
           </div>
-          <p className="font-mono text-sm text-[#1f1f1f]">004</p>
+          <p className="font-mono text-sm text-[#1f1f1f]">{String(items.length).padStart(3, '0')}</p>
         </div>
       </div>
 
-      {/* Desktop */}
+      {/* Desktop header */}
       <div className="hidden md:flex items-center justify-between mb-[4.236vw]">
         <div className="flex gap-2.5 items-start uppercase">
           <div className="font-light text-[6.667vw] text-black tracking-[-0.08em] leading-[0.86]">
             <p>Selected</p>
             <p>Work</p>
           </div>
-          <p className="font-mono text-sm text-[#1f1f1f] mt-1">004</p>
+          <p className="font-mono text-sm text-[#1f1f1f] mt-1">{String(items.length).padStart(3, '0')}</p>
         </div>
-        {/* Rotated [ portfolio ] label */}
         <div className="flex items-center justify-center h-[110px] w-[15px]">
           <p className="font-mono text-sm text-[#1f1f1f] uppercase whitespace-nowrap -rotate-90">
             [ portfolio ]
@@ -115,36 +146,52 @@ export default function PortfolioSection() {
         </div>
       </div>
 
-      {/* ── Mobile: single column ── */}
+      {/* Mobile: single column */}
       <div className="md:hidden flex flex-col gap-6">
-        <ProjectCard image={IMG_SURFERS}  tags={["Social Media", "Photography"]} title="Surfers paradise"    desktopHeight="" mobileHeight="h-[390px]" />
-        <ProjectCard image={IMG_CYBERPUNK} tags={["Social Media", "Photography"]} title="Cyberpunk caffe"     desktopHeight="" mobileHeight="h-[390px]" />
-        <ProjectCard image={IMG_AGENCY}   tags={["Social Media", "Photography"]} title="Agency 976"          desktopHeight="" mobileHeight="h-[390px]" />
-        <ProjectCard image={IMG_MINIMAL}  tags={["Social Media", "Photography"]} title="Minimal Playground"  desktopHeight="" mobileHeight="h-[390px]" />
+        {items.map((item) => (
+          <ProjectCard
+            key={item._id}
+            image={item.coverImage ?? null}
+            tags={item.tags ?? []}
+            title={item.title ?? ''}
+            desktopHeight=""
+            mobileHeight="h-[390px]"
+            url={item.url}
+          />
+        ))}
         <CtaBox />
       </div>
 
-      {/* ── Desktop: staggered two-column masonry ── */}
-      {/*
-        Left column starts at the top.
-        Right column is offset 240px → 16.667vw down to create the stagger.
-        Both columns bottom-align (items-end on the row).
-      */}
+      {/* Desktop: staggered two-column */}
       <div className="hidden md:flex gap-[1.667vw] items-end">
-
-        {/* Left column — gap-[117px] → 8.125vw between cards */}
         <div className="flex-1 flex flex-col gap-[8.125vw]">
-          <ProjectCard image={IMG_SURFERS}   tags={["Social Media", "Photography"]} title="Surfers paradise"   desktopHeight="md:h-[51.667vw]" mobileHeight="" />
-          <ProjectCard image={IMG_CYBERPUNK} tags={["Social Media", "Photography"]} title="Cyberpunk caffe"    desktopHeight="md:h-[48.542vw]" mobileHeight="" />
+          {leftItems.map((item, i) => (
+            <ProjectCard
+              key={item._id}
+              image={item.coverImage ?? null}
+              tags={item.tags ?? []}
+              title={item.title ?? ''}
+              desktopHeight={LEFT_HEIGHTS[i] ?? 'md:h-[51.667vw]'}
+              mobileHeight=""
+              url={item.url}
+            />
+          ))}
           <CtaBox />
         </div>
 
-        {/* Right column — staggered down 16.667vw, same gap between cards */}
         <div className="flex-1 flex flex-col gap-[8.125vw] pt-[16.667vw]">
-          <ProjectCard image={IMG_AGENCY}  tags={["Social Media", "Photography"]} title="Agency 976"         desktopHeight="md:h-[48.542vw]" mobileHeight="" />
-          <ProjectCard image={IMG_MINIMAL} tags={["Social Media", "Photography"]} title="Minimal Playground" desktopHeight="md:h-[51.667vw]" mobileHeight="" />
+          {rightItems.map((item, i) => (
+            <ProjectCard
+              key={item._id}
+              image={item.coverImage ?? null}
+              tags={item.tags ?? []}
+              title={item.title ?? ''}
+              desktopHeight={RIGHT_HEIGHTS[i] ?? 'md:h-[48.542vw]'}
+              mobileHeight=""
+              url={item.url}
+            />
+          ))}
         </div>
-
       </div>
 
     </section>
