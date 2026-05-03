@@ -1,12 +1,27 @@
+import Hero from "./components/Hero";
+import IntroSection from "./components/IntroSection";
+import AboutSection from "./components/AboutSection";
+import PhotoBreak from "./components/PhotoBreak";
+import ServicesSection from "./components/ServicesSection";
+import PortfolioSection from "./components/PortfolioSection";
+import TestimonialsSection from "./components/TestimonialsSection";
+import NewsSection from "./components/NewsSection";
+import Footer from "./components/Footer";
+
 export default function Home() {
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <h1
-        className="font-sans tracking-widest"
-        style={{ fontSize: "clamp(2rem, 8vw, 7rem)", letterSpacing: "0.2em", color: "#74B0CA", fontFamily: "var(--font-dm-sans)" }}
-      >
-        harvey specter
-      </h1>
-    </div>
+    <>
+      <main>
+        <Hero />
+        <IntroSection />
+        <AboutSection />
+        <PhotoBreak />
+        <ServicesSection />
+        <PortfolioSection />
+        <TestimonialsSection />
+        <NewsSection />
+      </main>
+      <Footer />
+    </>
   );
 }
