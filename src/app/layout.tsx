@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans, Space_Mono, Playfair_Display } from "next/font/google";
+import { SanityLive } from "@/sanity/lib/live";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -34,7 +35,10 @@ export default function RootLayout({
       lang="en"
       className={`${dmSans.variable} ${spaceMono.variable} ${playfair.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <SanityLive />
+      </body>
     </html>
   );
 }
