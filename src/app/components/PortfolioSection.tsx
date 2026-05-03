@@ -103,8 +103,8 @@ const RIGHT_HEIGHTS = ['md:h-[48.542vw]', 'md:h-[51.667vw]', 'md:h-[48.542vw]', 
 export default async function PortfolioSection() {
   const { data: items } = await sanityFetch({ query: FEATURED_PORTFOLIO_QUERY })
 
-  const leftItems  = items.filter((_, i) => i % 2 === 0)
-  const rightItems = items.filter((_, i) => i % 2 === 1)
+  const leftItems  = items.filter((_item, i) => i % 2 === 0)
+  const rightItems = items.filter((_item, i) => i % 2 === 1)
 
   return (
     <section className="bg-white px-4 md:px-[2.222vw] py-12 md:py-[5.556vw]">
